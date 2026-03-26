@@ -1,32 +1,28 @@
 name: Auto Label PR
 
 on:
-  pull_request:
-    types: [opened, edited, synchronize]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
 
 jobs:
   label:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Auto Label PR
+      - name: Add default labels
         uses: actions/github-script@v6
         with:
           script: |
-            const title = context.payload.pull_request.title.toLowerCase();
-            const prNumber = context.issue.number;
+            const prNumber = context.payload.pull_request.number;
+            const { owner, repo } = context.repo;
 
-            let labels = [];
-
-            if (title.includes("fix")) labels.push("bug");
-            if (title.includes("add") || title.includes("project")) labels.push("feature");
-            if (title.includes("update")) labels.push("enhancement");
-
-            if (labels.length > 0) {
-              await github.rest.issues.addLabels({
-                issue_number: prNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                labels: labels
-              });
-            }
+            await github.rest.issues.addLabels({
+              issue_number: prNumber,
+              owner,
+              repo,
+              labels: ["project-submitted", "project-under-review"],
+            });
